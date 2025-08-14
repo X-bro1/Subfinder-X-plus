@@ -10,20 +10,22 @@
 - ⚡ **Multithreading** pour une vitesse maximale  
 
 ## 🛠 Installation  
-......................................................................
+
 # Linux
-git clone https://github.com/X-bro1/Subfinder-X-plus.git
+1 git clone https://github.com/X-bro1/Subfinder-X-plus.git
 # You need to activate your routersploit_env
 cd routersploit_env
-source bin/activate
-cd .../
-cd subfinder-xp
-pip install -r requirements.txt  
-.......................................................................
+2 source bin/activate
+3 cd .../
+4 cd subfinder-xp
+5 pip install -r requirements.txt
+6 python subfinder.py -d lululemon.com --resolve -w wordlist.txt --save-all
+
 # Windows ( Cmd )
 Download zip files and extract them.
-cd C:\Users\XXX\Desktop\Subfinder-X-plus
-pip install -r requirements.txt
+1 cd C:\Users\XXX\Desktop\Subfinder-X-plus
+2 pip install -r requirements.txt
+3 python subfinder.py -d lululemon.com --resolve -w wordlist.txt --save-all
 
 
  
