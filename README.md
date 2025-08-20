@@ -5,7 +5,7 @@ SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (Vi
 
 ---
 
-###✨ Features  
+### ✨ Features  
 - ✅ Multi-source scanning** (CERT, OTX, Anubis, etc.)  
 - 🚀 Customizable brute-force** with wordlist support  
 - 📊 Reports in HTML, JSON, and TXT formats**  
@@ -24,10 +24,10 @@ SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (Vi
 - Use a wordlist suited to your target for better results
 - Increase threads for faster execution if your system allows
 
-## Disclaimer
+### Disclaimer
 - Use this tool only on domains you own or have explicit permission to test. Unauthorized scanning may be illegal and is your responsibility.
 
-## 🔗 Support / Donate
+### 🔗 Support / Donate
 
 - If you find this tool helpful, consider supporting me on Ko-fi : https://ko-fi.com/xbro1 ☕️
 
