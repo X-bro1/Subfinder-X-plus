@@ -5,7 +5,7 @@ SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (Vi
 
 ---
 
-#✨ Features  
+###✨ Features  
 - ✅ Multi-source scanning** (CERT, OTX, Anubis, etc.)  
 - 🚀 Customizable brute-force** with wordlist support  
 - 📊 Reports in HTML, JSON, and TXT formats**  
@@ -18,9 +18,22 @@ SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (Vi
 - --save-all : save all results (JSON, TXT, HTML)
 - --threads : number of threads to use for faster scanning
 
+### 💡 Tips
+
+- Make sure you have Python ≥ 3.9 installed
+- Use a wordlist suited to your target for better results
+- Increase threads for faster execution if your system allows
+
+## Disclaimer
+- Use this tool only on domains you own or have explicit permission to test. Unauthorized scanning may be illegal and is your responsibility.
+
+## 🔗 Support / Donate
+
+- If you find this tool helpful, consider supporting me on Ko-fi : https://ko-fi.com/xbro1 ☕️
+
 ---
 
-## 🛠 Installation  
+### 🛠 Installation  
 
 ## Windows
 ```bash
@@ -45,9 +58,3 @@ cd Subfinder-X-plus
 python subfinder.py -d Target.com --resolve -w wordlist.txt --save-all 
 ```
 
-## Disclaimer
-Use this tool only on domains you own or have explicit permission to test. Unauthorized scanning may be illegal and is your responsibility.
-
-## 🔗 Support / Donate
-
-If you find this tool helpful, consider supporting me on Ko-fi : https://ko-fi.com/xbro1 ☕️
