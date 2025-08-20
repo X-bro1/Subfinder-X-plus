@@ -1,31 +1,42 @@
 # Subfinder-X-plus
-# 🔍 SubFinder X+ - Advanced Subdomain Discovery Suite  
+🔍 **SubFinder X+** - Advanced Subdomain Discovery Suite  
 
-**SubFinder X+** est un outil puissant pour découvrir des sous-domaines, combinant **14 sources** (VirusTotal, URLScan, GitHub, etc.) avec un bruteforce optimisé.  
+**SubFinder X+** is a powerful tool to discover subdomains, combining **14 sources** (VirusTotal, URLScan, GitHub, etc.) with optimized brute-force scanning.  
 
-## ✨ Fonctionnalités  
+---
+
+## ✨ Features  
 - ✅ **Multi-source scanning** (CERT, OTX, Anubis, etc.)  
-- 🚀 **Bruteforce** avec wordlist personnalisable  
-- 📊 **Rapports HTML/JSON/TXT**  
-- ⚡ **Multithreading** pour une vitesse maximale  
+- 🚀 **Customizable brute-force** with wordlist support  
+- 📊 **Reports in HTML, JSON, and TXT formats**  
+- ⚡ **Multithreading** for maximum speed  
+
+---
 
 ## 🛠 Installation  
 
-# Linux
-1 git clone https://github.com/X-bro1/Subfinder-X-plus.git
-# You need to activate your routersploit_env
-cd routersploit_env
-2 source bin/activate
-3 cd .../
-4 cd subfinder-xp
-5 pip install -r requirements.txt
-6 python subfinder.py -d lululemon.com --resolve -w wordlist.txt --save-all
+### Linux
+```bash
+# Clone the repository
+git clone https://github.com/X-bro1/Subfinder-X-plus.git
+cd Subfinder-X-plus
 
-# Windows ( Cmd )
-Download zip files and extract them.
-1 cd C:\Users\XXX\Desktop\Subfinder-X-plus
-2 pip install -r requirements.txt
-3 python subfinder.py -d lululemon.com --resolve -w wordlist.txt --save-all
+# Activate your virtual environment (if needed)
+source routersploit_env
+bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+### Windows
+```bash
+ # Download and extract the repository
+cd C:\Users\XXX\Desktop\Subfinder-X-plus
+
+# Install dependencies
+pip install -r requirements.txt
+
+### Usage Examples
+python subfinder.py -d Target.com --resolve -w wordlist.txt --save-all 
 
 
- 
