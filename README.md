@@ -5,18 +5,18 @@ SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (Vi
 
 ---
 
-##✨ Features  
+#✨ Features  
 - ✅ Multi-source scanning** (CERT, OTX, Anubis, etc.)  
 - 🚀 Customizable brute-force** with wordlist support  
 - 📊 Reports in HTML, JSON, and TXT formats**  
 - ⚡ Multithreading** for maximum speed
 
-##  Main Options
--d / --domain : target domain to scan
---resolve : resolve subdomains to IP addresses
--w / --wordlist : custom wordlist for brute-force
---save-all : save all results (JSON, TXT, HTML)
---threads : number of threads to use for faster scanning
+# Main Options
+- -d / --domain : target domain to scan
+- --resolve : resolve subdomains to IP addresses
+- -w / --wordlist : custom wordlist for brute-force
+- --save-all : save all results (JSON, TXT, HTML)
+- --threads : number of threads to use for faster scanning
 
 ---
 
