@@ -18,6 +18,10 @@ SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (Vi
 - 📡 Unique IP detection and deduplication
 - 🔌 IPv4 support for all network operations
 
+> ### ⚠️ Note: 
+> DNS resolution and port scanning may take significant time depending on the quality of the discovered subdomains.  
+> The same principle applies to brute-forcing and resolving DNS for identified subdomains.
+> > If you stop the scan, all results discovered up to that point will be saved.
 
 ### 🛠 Installation  
 
