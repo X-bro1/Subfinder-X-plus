@@ -3,20 +3,59 @@
 
 SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (VirusTotal, URLScan, GitHub, etc.) with optimized brute-force scanning.  
 
----
+### ✨ Features
+- ✅ Multi-source scanning (CERT, OTX, Anubis, HackerTarget, SecurityTrails, Censys, Shodan, VirusTotal, URLScan, GitHub, Google, Bing, ThreatCrowd, BufferOver)
+- 🚀 Customizable brute-force with wordlist support and adjustable threads
+- 📊 Comprehensive reports in HTML, JSON, and TXT formats
+- ⚡ Multithreading (up to 200 threads) for maximum speed
+- 🌐 DNS resolution and port scanning (80, 443, 21, 22, 25, 8080, 8443)
+- 💾 Auto-save functionality with dedicated results folder
+- 🎨 Rich console interface with progress bars and colored output
+- 🔄 Graceful CTRL+C handling with automatic backup
+- 🔍 Reverse DNS lookup for additional subdomain discovery
+- 🤝 Support integration with multiple APIs (SecurityTrails, Censys, Shodan, VirusTotal)
+- 🌐 Massive subdomain resolution with bulk DNS lookup
+- 📡 Unique IP detection and deduplication
+- 🔌 IPv4 support for all network operations
 
-### ✨ Features  
-- ✅ Multi-source scanning** (CERT, OTX, Anubis, etc.)  
-- 🚀 Customizable brute-force** with wordlist support  
-- 📊 Reports in HTML, JSON, and TXT formats**  
-- ⚡ Multithreading** for maximum speed
+
+### 🛠 Installation  
+
+## Windows
+```bash
+ # Download and extract the repository
+cd Subfinder-X-plus
+pip install -r requirements.txt
+# Add your free or premium API keys in the .env file
+```
+
+## Linux
+```bash
+
+git clone https://github.com/X-bro1/Subfinder-X-plus.git
+# Activate your virtual environment
+source routersploit_env
+bin/activate
+pip install -r requirements.txt
+# Add your free or premium API keys in the .env file
+cd Subfinder-X-plus
+```
+
+### Usage Examples Linux / Windows
+```bash
+python Subfinder-X-plus.py -d Target.com --resolve -w wordlist.txt --save-all 
+```
+
 
 # Main Options
-- -d / --domain : target domain to scan
-- --resolve : resolve subdomains to IP addresses
-- -w / --wordlist : custom wordlist for brute-force
-- --save-all : save all results (JSON, TXT, HTML)
-- --threads : number of threads to use for faster scanning
+```bash
+- -d, --domain      # Target domain (required)
+- -r, --resolve     # Enable DNS resolution + port scanning
+- -w, --wordlist    #  Path to wordlist for bruteforce
+- -t, --threads     # Number of threads (default: 200)
+- --save-all :      # Save all report formats (JSON, TXT, HTML)
+- -o, --output      # Custom output file
+```
 
 ### 💡 Tips
 
@@ -33,28 +72,5 @@ SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (Vi
 
 ---
 
-### 🛠 Installation  
 
-## Windows
-```bash
- # Download and extract the repository
-cd Subfinder-X-plus
-pip install -r requirements.txt
-```
-
-## Linux
-```bash
-
-git clone https://github.com/X-bro1/Subfinder-X-plus.git
-# Activate your virtual environment
-source routersploit_env
-bin/activate
-pip install -r requirements.txt
-cd Subfinder-X-plus
-```
-
-### Usage Examples Linux / Windows
-```bash
-python subfinder.py -d Target.com --resolve -w wordlist.txt --save-all 
-```
 
