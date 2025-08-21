@@ -7,6 +7,8 @@ import socket
 import os
 import re
 import logging
+import signal
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Set, Tuple, Optional
 from dotenv import load_dotenv
@@ -39,11 +41,103 @@ HEADERS = {"User-Agent": "Mozilla/5.0"}
 DEFAULT_PORTS = [80, 443, 21, 22, 25, 8080, 8443]
 socket.setdefaulttimeout(1.0)
 
+# Global flag for graceful shutdown
+shutdown_flag = False
+
+# Global variables to store results for graceful shutdown
+global_results = {
+    'subs': set(),
+    'per_source': {},
+    'resolved': {},
+    'ip_open_ports': {},
+    'domain': '',
+    'bruteforce_subs': set()
+}
+
+# === CREATE RESULTS FOLDER ===
+def create_results_folder():
+    """Create results folder if it doesn't exist"""
+    if not os.path.exists("resultats"):
+        os.makedirs("resultats")
+        console.print("[green]✓ Created 'resultats' folder[/green]")
+
+# === CTRL+C HANDLER ===
+def signal_handler(sig, frame):
+    global shutdown_flag
+    if shutdown_flag:
+        return  # Already shutting down
+    
+    console.print("\n[red]<<<<<>>>>>        Saving results and shutting down...   [/red]")
+    shutdown_flag = True
+    save_results_on_exit()
+    sys.exit(0)
+
+# Register signal handler
+signal.signal(signal.SIGINT, signal_handler)
+
+# === SAVE RESULTS ON EXIT ===
+def save_results_on_exit():
+    global global_results
+    if not global_results['domain']:
+        console.print("[yellow]<<<<<>>>>>     No domain scanned yet. Nothing to save.[/yellow]")
+        return
+    
+    domain = global_results['domain']
+    
+    # Combine all subdomains
+    all_subs = set(global_results['subs'])
+    all_subs.update(global_results['bruteforce_subs'])
+    
+    for source_subs in global_results['per_source'].values():
+        all_subs.update(source_subs)
+    
+    if not all_subs:
+        console.print("[yellow]<<<<<>>>>>       No subdomains found to save.[/yellow]")
+        return
+    
+    # Convert to sorted list
+    subs_list = sorted(all_subs)
+    
+    # Create results folder
+    create_results_folder()
+    
+    # Save raw results
+    try:
+        with open(f"resultats/resultat-{domain}.txt", "w", encoding="utf-8") as f:
+            f.write("\n".join(subs_list))
+        console.print(f"[green]📁 Raw results saved to [bold]resultats/resultat-{domain}.txt[/bold][/green]")
+    except Exception as e:
+        console.print(f"[red]❌ Error saving raw results: {e}[/red]")
+    
+    # Save HTML report
+    try:
+        html_content = generate_html_report(domain, subs_list, global_results['per_source'], 
+                                          global_results['resolved'], global_results['ip_open_ports'])
+        with open(f"resultats/rapport-{domain}.html", "w", encoding="utf-8") as f:
+            f.write(html_content)
+        console.print(f"[green]📁 HTML report saved to [bold]resultats/rapport-{domain}.html[/bold][/green]")
+    except Exception as e:
+        console.print(f"[red]❌ Error saving HTML report: {e}[/red]")
+    
+    # Save IPs
+    if global_results['resolved']:
+        try:
+            save_ips_to_file(list(global_results['resolved'].values()), f"resultats/ips-{domain}.txt")
+            console.print(f"[green]📁 IPs saved to [bold]resultats/ips-{domain}.txt[/bold][/green]")
+        except Exception as e:
+            console.print(f"[red]❌ Error saving IPs: {e}[/red]")
+    
+    # Afficher le message de support
+    console.print("\n[bold yellow]<<<<<>>>>>         If you find this tool useful, please consider supporting its development by buying a coffee for X-Bro :   [/bold yellow]")
+    console.print("[bold cyan]<<<<<>>>>>         https://ko-fi.com/xbro1         [/bold cyan]")
+
 # === MODERN BANNER ===
 def show_banner():
     banner = pyfiglet.figlet_format("SubFinder X+", font="slant")
     console.print(Panel.fit(
-        f"[bold blue]{banner}[/bold blue]\n[italic]           Advanced Subdomain Discovery    [/italic]",
+        f"[bold blue]{banner}[/bold blue]\n"
+        f"[italic]                 Advanced Subdomain Discovery     [/italic]\n"
+        f"[bold green]<<<<<>>>>>   Support the Project: https://ko-fi.com/xbro1   [/bold green]\n",
         border_style="blue",
         subtitle="[bold yellow]  Made By X-Bro  [/bold yellow]"
     ))
@@ -97,6 +191,7 @@ def save_ips_to_file(ips: List[str], filename: str = "ips.txt") -> None:
 
 # === SOURCES ===
 def from_crtsh(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     try:
         r = requests.get(f"https://crt.sh/?q=%25.{domain}&output=json", timeout=15)
         data = r.json()
@@ -107,6 +202,7 @@ def from_crtsh(domain: str) -> Set[str]:
         return set()
 
 def from_otx(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     try:
         r = requests.get(f"https://otx.alienvault.com/api/v1/indicators/domain/{domain}/passive_dns", timeout=15)
         return {entry["hostname"] for entry in r.json().get("passive_dns", []) 
@@ -115,6 +211,7 @@ def from_otx(domain: str) -> Set[str]:
         return set()
 
 def from_threatcrowd(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     try:
         r = requests.get(f"https://www.threatcrowd.org/searchApi/v2/domain/report/?domain={domain}", timeout=15)
         return set(r.json().get("subdomains", []))
@@ -122,6 +219,7 @@ def from_threatcrowd(domain: str) -> Set[str]:
         return set()
 
 def from_anubis(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     try:
         r = requests.get(f"https://jldc.me/anubis/subdomains/{domain}", timeout=15)
         return set(r.json())
@@ -129,6 +227,7 @@ def from_anubis(domain: str) -> Set[str]:
         return set()
 
 def from_hackertarget(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     try:
         r = requests.get(f"https://api.hackertarget.com/hostsearch/?q={domain}", timeout=15)
         return {line.split(",")[0] for line in r.text.splitlines() 
@@ -137,6 +236,7 @@ def from_hackertarget(domain: str) -> Set[str]:
         return set()
 
 def from_bufferover(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     try:
         r = requests.get(f"https://dns.bufferover.run/dns?q=.{domain}", timeout=15)
         return {parts[1] for entry in r.json().get("FDNS_A", []) or []
@@ -146,6 +246,7 @@ def from_bufferover(domain: str) -> Set[str]:
         return set()
 
 def from_securitytrails(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     if not SECURITYTRAILS_API_KEY:
         return set()
     try:
@@ -154,11 +255,12 @@ def from_securitytrails(domain: str) -> Set[str]:
             headers={"APIKEY": SECURITYTRAILS_API_KEY},
             timeout=15
         )
-        return {f"{sub}.{domain}" for sub in r.json().get("subdomains", [])}
+        return {f"{sub}.{domain}" for sub in r.json().get("subdomangs", [])}
     except:
         return set()
 
 def from_censys(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     if not (CENSYS_API_ID and CENSYS_API_SECRET):
         return set()
     try:
@@ -176,6 +278,7 @@ def from_censys(domain: str) -> Set[str]:
         return set()
 
 def from_shodan(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     if not SHODAN_API_KEY:
         return set()
     try:
@@ -185,6 +288,7 @@ def from_shodan(domain: str) -> Set[str]:
         return set()
 
 def from_google(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     subs = set()
     for start in range(0, 30, 10):
         try:
@@ -198,6 +302,7 @@ def from_google(domain: str) -> Set[str]:
     return subs
 
 def from_bing(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     subs = set()
     for page in range(1, 4):
         try:
@@ -211,6 +316,7 @@ def from_bing(domain: str) -> Set[str]:
     return subs
 
 def from_urlscan(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     try:
         url = f"https://urlscan.io/api/v1/search/?q=domain:{domain}"
         r = requests.get(url, headers=HEADERS, timeout=15)
@@ -226,6 +332,7 @@ def from_urlscan(domain: str) -> Set[str]:
         return set()
 
 def from_github(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     subs = set()
     try:
         headers = {"Accept": "application/vnd.github.v3+json"}
@@ -240,7 +347,6 @@ def from_github(domain: str) -> Set[str]:
         url = f"https://api.github.com/search/code?q={domain}+in:file&per_page=100"
         r = requests.get(url, headers=headers, timeout=20)
         
-        # Nouveau format simplifié pour GitHub
         console.print("\n[bold white]>>>> Scanning GitHub...[/bold white]")
         
         for item in r.json().get("items", [])[:100]:
@@ -259,6 +365,7 @@ def from_github(domain: str) -> Set[str]:
         return set()
 
 def from_virustotal(domain: str) -> Set[str]:
+    if shutdown_flag: return set()
     if not VIRUSTOTAL_API_KEY:
         return set()
     try:
@@ -273,6 +380,8 @@ def from_virustotal(domain: str) -> Set[str]:
 
 # === BRUTEFORCE ===
 def bruteforce_subdomains(domain: str, wordlist_path: str, threads: int = 200) -> Set[str]:
+    if shutdown_flag: return set()
+    
     console.print(f"\n[bold yellow]>>>> Bruteforce (x{threads} threads)...[/bold yellow]")
     
     try:
@@ -284,14 +393,14 @@ def bruteforce_subdomains(domain: str, wordlist_path: str, threads: int = 200) -
 
     candidates = set()
     for word in words:
+        if shutdown_flag: return set()
         candidates.add(f"{word}.{domain}")
-        candidates.add(f"{word}-{domain}")
-        candidates.add(f"{word}_{domain}")
 
     valid = set()
     lock = threading.Lock()
     
     def check_subdomain(sub: str):
+        if shutdown_flag: return
         try:
             if resolve(sub):
                 with lock:
@@ -310,6 +419,9 @@ def bruteforce_subdomains(domain: str, wordlist_path: str, threads: int = 200) -
         ) as progress:
             task = progress.add_task("[white]>>>> Checking...[/white]", total=len(futures))
             for _ in as_completed(futures):
+                if shutdown_flag: 
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    return valid
                 progress.update(task, advance=1)
     
     return valid
@@ -344,15 +456,22 @@ def find_subdomains(domain: str, resolve_dns: bool = False) -> Tuple[List[str], 
         "[progress.percentage]{task.percentage:>3.0f}%",
         TimeRemainingColumn(),
         console=console
-    ) as progress:
+        ) as progress:
         task = progress.add_task("[white]>>>> Collecting data...[/white]", total=len(sources))
         
         for name, func in sources:
+            if shutdown_flag: 
+                return [], {}, {}, {}
             try:
                 subs = func(domain)
                 valid_subs = {s for s in subs if s.endswith(f".{domain}")}
                 per_source[name] = valid_subs
                 results.update(valid_subs)
+                
+                # Update global results incrementally
+                global_results['per_source'][name] = valid_subs
+                global_results['subs'].update(valid_subs)
+                
                 progress.update(task, advance=1, description=f"[white]>>>> Checking {name}[/white]")
                 if name != "GitHub":  
                     console.print(f"[white]• {name}: [green]{len(valid_subs)}[/green] subdomains[/white]")
@@ -365,7 +484,7 @@ def find_subdomains(domain: str, resolve_dns: bool = False) -> Tuple[List[str], 
     ip_open_ports = {}
     reverse_new = set()
     
-    if resolve_dns:
+    if resolve_dns and not shutdown_flag:
         console.print("\n[bold white]>>>> Resolving DNS...[/bold white]")
         with Progress(
             BarColumn(complete_style="white"),
@@ -376,30 +495,43 @@ def find_subdomains(domain: str, resolve_dns: bool = False) -> Tuple[List[str], 
             task = progress.add_task("[white]Resolving IPs...[/white]", total=len(results))
             
             for sub in sorted(results):
+                if shutdown_flag: 
+                    return [], {}, {}, {}
                 ip = resolve(sub)
                 if ip:
                     resolved[sub] = ip
                 progress.update(task, advance=1)
         
-        console.print("\n[bold white]>>>> Scanning ports...[/bold white]")
-        unique_ips = list(set(resolved.values()))
-        with Progress(
-            BarColumn(complete_style="white"),
-            "[progress.percentage]{task.percentage:>3.0f}%",
-            TimeRemainingColumn(),
-            console=console
-        ) as progress:
-            task = progress.add_task("[white]>>>> Scanning ports...[/white]", total=len(unique_ips))
-            
-            for ip in unique_ips:
-                if ip not in ip_open_ports:
-                    ip_open_ports[ip] = scan_ports(ip)
-                reverse_new.update(reverse_dns_scrape(ip, domain))
-                progress.update(task, advance=1)
+        # Update global results with resolved IPs
+        global_results['resolved'].update(resolved)
         
-        if reverse_new:
-            per_source["ReverseDNS"] = reverse_new
-            results.update(reverse_new)
+        if not shutdown_flag:
+            console.print("\n[bold white]>>>> Scanning ports...[/bold white]")
+            unique_ips = list(set(resolved.values()))
+            with Progress(
+                BarColumn(complete_style="white"),
+                "[progress.percentage]{task.percentage:>3.0f}%",
+                TimeRemainingColumn(),
+                console=console
+            ) as progress:
+                task = progress.add_task("[white]>>>> Scanning ports...[/white]", total=len(unique_ips))
+                
+                for ip in unique_ips:
+                    if shutdown_flag: 
+                        return [], {}, {}, {}
+                    if ip not in ip_open_ports:
+                        ip_open_ports[ip] = scan_ports(ip)
+                    reverse_new.update(reverse_dns_scrape(ip, domain))
+                    progress.update(task, advance=1)
+            
+            # Update global results with port scan results
+            global_results['ip_open_ports'].update(ip_open_ports)
+            
+            if reverse_new:
+                per_source["ReverseDNS"] = reverse_new
+                results.update(reverse_new)
+                global_results['per_source']["ReverseDNS"] = reverse_new
+                global_results['subs'].update(reverse_new)
     
     return sorted(results), per_source, resolved, ip_open_ports
 
@@ -480,6 +612,9 @@ def generate_html_report(domain: str, subs: List[str], per_source: Dict[str, Set
         .blue { color: #4285f4; }
         .orange { color: #ff9800; }
         .red { color: #db4437; }
+        .donate-section { text-align: center; margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 5px; }
+        .donate-button { display: inline-block; background-color: #ff5e5e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 10px; }
+        .donate-button:hover { background-color: #ff3d3d; }
     </style>
     """
     
@@ -544,6 +679,12 @@ def generate_html_report(domain: str, subs: List[str], per_source: Dict[str, Set
                 </div>
             </div>
             
+            <div class="donate-section">
+                <h3>Support the Developer</h3>
+                <p>If you find this tool useful, please consider supporting its development</p>
+                <a href="https://ko-fi.com/xbro1" target="_blank" class="donate-button">Donate via Ko-fi</a>
+            </div>
+            
             <h3>Discovered Subdomains</h3>
             <table>
                 <thead>
@@ -587,6 +728,9 @@ def generate_html_report(domain: str, subs: List[str], per_source: Dict[str, Set
 def main():
     show_banner()
     
+    # Create results folder at the beginning
+    create_results_folder()
+    
     parser = argparse.ArgumentParser(description="SubFinder X+ - Enhanced Subdomain Discovery")
     parser.add_argument("-d", "--domain", required=True, help="Target domain")
     parser.add_argument("-r", "--resolve", action="store_true", help="Enable DNS resolution + port scan")
@@ -596,53 +740,107 @@ def main():
     parser.add_argument("-o", "--output", help="Output file (.txt, .json or .html)")
     args = parser.parse_args()
     
-    subs, per_source, resolved, ip_open_ports = find_subdomains(args.domain, args.resolve)
+    # Store domain in global results for graceful shutdown
+    global_results['domain'] = args.domain
     
-    if args.wordlist:
-        brute = bruteforce_subdomains(args.domain, args.wordlist, args.threads)
-        per_source["Bruteforce"] = brute
-        subs = sorted(set(subs) | brute)
-    
-    generate_console_report(args.domain, subs, per_source, resolved, ip_open_ports)
-    
-    if args.resolve and resolved:
-        save_ips_to_file(list(resolved.values()))
-    
-    if args.save_all:
-        try:
-            html_content = generate_html_report(args.domain, subs, per_source, resolved, ip_open_ports)
-            with open("index.html", "w", encoding="utf-8") as f:
-                f.write(html_content)
+    try:
+        subs, per_source, resolved, ip_open_ports = find_subdomains(args.domain, args.resolve)
+        
+        # Update global results
+        global_results.update({
+            'subs': set(subs),
+            'per_source': per_source,
+            'resolved': resolved,
+            'ip_open_ports': ip_open_ports
+        })
+        
+        if args.wordlist and not shutdown_flag:
+            brute = bruteforce_subdomains(args.domain, args.wordlist, args.threads)
+            per_source["Bruteforce"] = brute
+            subs = sorted(set(subs) | brute)
             
-            with open("resultat.txt", "w", encoding="utf-8") as f:
-                f.write("\n".join(subs))
+            # Update global results with bruteforce results
+            global_results['subs'].update(brute)
+            global_results['per_source']["Bruteforce"] = brute
+            global_results['bruteforce_subs'] = brute
             
-            console.print(f"\n[green]📁 HTML report saved to [bold]index.html[/bold][/green]")
-            console.print(f"[green]📁 Raw results saved to [bold]resultat.txt[/bold][/green]")
-        except Exception as e:
-            console.print(f"[red]❌ Error saving files: {e}[/red]")
-    elif args.output:
-        try:
-            if args.output.endswith(".json"):
-                payload = {
-                    "domain": args.domain,
-                    "subdomains": subs,
-                    "resolved": resolved,
-                    "ip_open_ports": ip_open_ports,
-                    "sources": {k: list(v) for k, v in per_source.items()}
-                }
-                with open(args.output, "w", encoding="utf-8") as f:
-                    json.dump(payload, f, indent=2, ensure_ascii=False)
-            elif args.output.endswith(".html"):
-                html_content = generate_html_report(args.domain, subs, per_source, resolved, ip_open_ports)
-                with open(args.output, "w", encoding="utf-8") as f:
-                    f.write(html_content)
-            else:
-                with open(args.output, "w", encoding="utf-8") as f:
-                    f.write("\n".join(subs))
-            console.print(f"\n[green]📁 Results saved to {args.output}[/green]")
-        except Exception as e:
-            console.print(f"[red]❌ Error saving file: {e}[/red]")
+            # Resolve bruteforced subdomains if resolve flag is set
+            if args.resolve and not shutdown_flag:
+                console.print("\n[bold white]>>>> Resolving bruteforced subdomains...[/bold white]")
+                with Progress(
+                    BarColumn(complete_style="white"),
+                    "[progress.percentage]{task.percentage:>3.0f}%",
+                    TimeRemainingColumn(),
+                    console=console
+                ) as progress:
+                    task = progress.add_task("[white]Resolving IPs...[/white]", total=len(brute))
+                    
+                    for sub in brute:
+                        if shutdown_flag: break
+                        ip = resolve(sub)
+                        if ip:
+                            resolved[sub] = ip
+                        progress.update(task, advance=1)
+                
+                # Update global results with resolved IPs
+                global_results['resolved'].update(resolved)
+        
+        if not shutdown_flag:
+            generate_console_report(args.domain, subs, per_source, resolved, ip_open_ports)
+            
+            if args.resolve and resolved:
+                save_ips_to_file(list(resolved.values()), f"resultats/ips-{args.domain}.txt")
+                console.print(f"[green]📁 IPs saved to [bold]resultats/ips-{args.domain}.txt[/bold][/green]")
+            
+            if args.save_all:
+                try:
+                    html_content = generate_html_report(args.domain, subs, per_source, resolved, ip_open_ports)
+                    with open(f"resultats/rapport-{args.domain}.html", "w", encoding="utf-8") as f:
+                        f.write(html_content)
+                    
+                    with open(f"resultats/resultat-{args.domain}.txt", "w", encoding="utf-8") as f:
+                        f.write("\n".join(subs))
+                    
+                    console.print(f"\n[green]📁 HTML report saved to [bold]resultats/rapport-{args.domain}.html[/bold][/green]")
+                    console.print(f"[green]📁 Raw results saved to [bold]resultats/resultat-{args.domain}.txt[/bold][/green]")
+                except Exception as e:
+                    console.print(f"[red]❌ Error saving files: {e}[/red]")
+            elif args.output:
+                try:
+                    # If output path is specified, use it as is
+                    if args.output.endswith(".json"):
+                        payload = {
+                            "domain": args.domain,
+                            "subdomains": subs,
+                            "resolved": resolved,
+                            "ip_open_ports": ip_open_ports,
+                            "sources": {k: list(v) for k, v in per_source.items()}
+                        }
+                        with open(args.output, "w", encoding="utf-8") as f:
+                            json.dump(payload, f, indent=2, ensure_ascii=False)
+                    elif args.output.endswith(".html"):
+                        html_content = generate_html_report(args.domain, subs, per_source, resolved, ip_open_ports)
+                        with open(args.output, "w", encoding="utf-8") as f:
+                            f.write(html_content)
+                    else:
+                        with open(args.output, "w", encoding="utf-8") as f:
+                            f.write("\n".join(subs))
+                    console.print(f"\n[green]📁 Results saved to {args.output}[/green]")
+                except Exception as e:
+                    console.print(f"[red]❌ Error saving file: {e}[/red]")
+            
+            # Afficher le message de support à la fin du scan normal
+            console.print("\n[bold yellow]<<<<<>>>>>         If you find this tool useful, please consider supporting its development by buying a coffee for X-Bro :    [/bold yellow]")
+            console.print("[bold cyan]<<<<<>>>>>         https://ko-fi.com/xbro1         [/bold cyan]")
+        else:
+            console.print("[yellow]Scan interrupted by user. Results saved.[/yellow]")
+                
+    except KeyboardInterrupt:
+        console.print("\n[red]⚠️  Interruption utilisateur détectée. Sauvegarde des résultats...[/red]")
+        save_results_on_exit()
+    except Exception as e:
+        console.print(f"[red]❌ Erreur inattendue: {e}[/red]")
+        save_results_on_exit()
 
 if __name__ == "__main__":
     main()
