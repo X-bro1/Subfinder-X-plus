@@ -31,6 +31,7 @@ SubFinder X+ is a powerful tool to discover subdomains, combining 14 sources (Vi
 cd Subfinder-X-plus
 pip install -r requirements.txt
 # Add your free or premium API keys in the .env file
+ Modify the .env file and add your API keys (free and premium)
 ```
 
 ## Linux
@@ -42,6 +43,7 @@ source routersploit_env
 bin/activate
 pip install -r requirements.txt
 # Add your free or premium API keys in the .env file
+nano .env :  Modify the .env file and add your API keys (free and premium)
 cd Subfinder-X-plus
 ```
 
