@@ -47,7 +47,15 @@ cd Subfinder-X-plus
 
 ### Usage Examples Linux / Windows
 ```bash
-python Subfinder-X-plus.py -d Target.com --resolve -w wordlist.txt --save-all 
+# Maximum performance with large wordlist
+python Subfinder-X-plus.py -d example.com --resolve -w wordlist.txt --save-all
+python Subfinder-X-plus.py -d example.com -w wordlist.txt -t 200 -r
+
+# Quick scan without resolution  
+python sSubfinder-X-plus.py -d example.com
+
+# Save specific format only
+python Subfinder-X-plus.py -d example.com -o output.html
 ```
 
 
@@ -59,6 +67,7 @@ python Subfinder-X-plus.py -d Target.com --resolve -w wordlist.txt --save-all
 - -t, --threads     # Number of threads (default: 200)
 - --save-all :      # Save all report formats (JSON, TXT, HTML)
 - -o, --output      # Custom output file
+- -h, --help        # Show this help message and exit
 ```
 
 ### 💡 Tips
